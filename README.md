@@ -453,15 +453,6 @@ function downloadCSV() {
   showMsg('download-msg','success','✓ ghl-contacts.csv downloaded. Follow the steps above to import into GHL.');
 }
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'ghl-contacts.csv'; a.click();
-  URL.revokeObjectURL(url);
-  showMsg('download-msg','success','✓ ghl-contacts.csv downloaded to your Downloads folder. Now follow Step 2 and Step 3 above to import into GHL.');
-}
-
 function csvEscape(val) {
   if (!val) return '';
   const str = String(val);
