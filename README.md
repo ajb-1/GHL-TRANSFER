@@ -165,20 +165,24 @@
       </div>
       <div class="instructions" style="margin-top:10px;">
         <div class="instructions-label">Step 2 — Create custom fields in GHL (one-time setup)</div>
-        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">In GHL go to <b>Settings → Custom Fields → Add Field</b></div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Create a <b>Text Area</b> field named exactly: <code>Possible Relatives</code></div></div>
-        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Create a <b>Text Area</b> field named exactly: <code>Previous Addresses</code></div></div>
-        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">Create a <b>Text Area</b> field named exactly: <code>Also Seen As</code></div></div>
-        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">You only do this once — these fields will be available for all future imports</div></div>
+        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">In GHL go to <b>Settings</b> in the left sidebar → click <b>Custom Fields</b></div></div>
+        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text</b> → name it exactly: <code>Age</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Phone</b> → name it exactly: <code>Phone 2</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Phone</b> → name it exactly: <code>Phone 3</code> → Save. Repeat for <code>Phone 4</code>, <code>Phone 5</code> etc. if needed</div></div>
+        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Also Seen As</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">6</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Previous Addresses</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">7</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Possible Relatives</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">8</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text</b> → name it exactly: <code>Date of Birth</code> → Save</div></div>
+        <div class="inst-row"><div class="inst-n">9</div><div class="inst-text">You only do this once — all fields will be available for every future import</div></div>
       </div>
       <div class="instructions" style="margin-top:10px;">
         <div class="instructions-label">Step 3 — Import the CSV into GHL</div>
         <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">In GHL go to <b>Contacts</b> in the left sidebar</div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click the <b>Import</b> icon (an arrow pointing up) near the top right of the contacts page</div></div>
-        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Click <b>Select File</b> and choose the <code>ghl-contacts.csv</code> file from your Downloads folder</div></div>
-        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">GHL will show a field mapping screen — most fields like First Name, Last Name, Phone, Address map automatically</div></div>
-        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">For <b>Possible Relatives</b>, <b>Previous Addresses</b>, and <b>Also Seen As</b> — use the dropdown to map them to the custom fields you created in Step 2</div></div>
-        <div class="inst-row"><div class="inst-n">6</div><div class="inst-text">Click <b>Next</b> then <b>Import</b> — your contacts will appear in GHL within a few minutes</div></div>
+        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click the <b>Import</b> icon (arrow pointing up) near the top right</div></div>
+        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Click <b>Select File</b> and choose <code>ghl-contacts.csv</code> from your Downloads folder</div></div>
+        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">On the field mapping screen, these map <b>automatically</b>: First Name, Last Name, Email, Phone, Address1, City, State, Postal Code</div></div>
+        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">For the remaining columns, use the dropdown to manually map each one to the custom field you created: <code>Phone 2</code> → Phone 2, <code>Phone 3</code> → Phone 3, <code>Age</code> → Age, <code>Date of Birth</code> → Date of Birth, <code>Also Seen As</code> → Also Seen As, <code>Previous Addresses</code> → Previous Addresses, <code>Possible Relatives</code> → Possible Relatives</div></div>
+        <div class="inst-row"><div class="inst-n">6</div><div class="inst-text">Click <b>Next</b> → then <b>Import</b> — contacts appear in GHL within a few minutes</div></div>
       </div>
       <div class="btn-row">
         <button class="btn btn-green" id="download-btn" onclick="downloadCSV()">⬇ Download CSV</button>
@@ -207,9 +211,14 @@ function parseProfile(text) {
   };
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-  // Phones
+  // Pre-process: rejoin phone numbers split across lines
+  // TruePeopleSearch makes area codes clickable links so they land on separate lines when copied
+  // e.g. "(317) \n708-5412" needs to become "(317) 708-5412"
+  const rejoined = text.replace(/(\(\d{3}\))\s*\n\s*(\d{3}[-.\s]\d{4})/g, '$1 $2');
+
+  // Phones — run against rejoined text
   const phoneRegex = /(\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4})/g;
-  result.phones = [...new Set(text.match(phoneRegex) || [])].map(p => p.trim());
+  result.phones = [...new Set(rejoined.match(phoneRegex) || [])].map(p => p.trim());
 
   // Emails
   const emailRegex = /[\w.+-]+@[\w-]+\.[a-z]{2,}/gi;
@@ -219,9 +228,9 @@ function parseProfile(text) {
   const ageM = text.match(/\bAge[:\s]+(\d{1,3})\b/i);
   if (ageM) result.age = ageM[1];
 
-  // DOB
-  const dobM = text.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s*\d{4}\b/i);
-  if (dobM) result.dateOfBirth = dobM[0];
+  // DOB — handles "Born February 1947" (month+year) and "Born February 15, 1947" (full date)
+  const dobM = text.match(/\bBorn\s+((January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s*\d{4}|(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/i);
+  if (dobM) result.dateOfBirth = dobM[1].trim();
 
   // Section extractor
   function extractSection(startKws, stopKws) {
@@ -386,37 +395,63 @@ function renderQueue() {
 function downloadCSV() {
   if (!queue.length) { showMsg('download-msg','error','No profiles in queue yet.'); return; }
 
-  // GHL-compatible headers based on official documentation
+  // Find max phones across all queued contacts
+  const maxPhones = Math.max(...queue.map(p => p.phones.length), 1);
+
+  // Build phone column headers: Phone, Phone 2, Phone 3...
+  const phoneHeaders = ['Phone'];
+  for (let i = 2; i <= maxPhones; i++) phoneHeaders.push('Phone ' + i);
+
+  // Full headers — each phone gets its own column
   const headers = [
-    'First Name','Last Name','Email','Phone',
-    'Additional Phone Numbers',
-    'Address1','City','State','Postal Code',
-    'Date of Birth',
-    'Also Seen As','Previous Addresses','Possible Relatives',
+    'First Name', 'Last Name', 'Email',
+    ...phoneHeaders,
+    'Address1', 'City', 'State', 'Postal Code',
+    'Date of Birth', 'Age',
+    'Also Seen As',
+    'Previous Addresses',
+    'Possible Relatives',
     'Source'
   ];
 
   const rows = queue.map(p => {
-    const phone1 = p.phones[0] || '';
-    const additionalPhones = p.phones.slice(1).join(', ');
-    const email1 = p.emails[0] || '';
+    // Each phone in its own cell
+    const phoneCells = [];
+    for (let i = 0; i < maxPhones; i++) {
+      phoneCells.push(csvEscape(p.phones[i] || ''));
+    }
+
+    // Lists: each item on its own line inside the cell — clean and readable in GHL
+    const alsoSeenAs   = p.aliases.length           ? csvMultiline(p.aliases)           : '';
+    const prevAddrs    = p.previousAddresses.length  ? csvMultiline(p.previousAddresses)  : '';
+    const relatives    = p.relatives.length          ? csvMultiline(p.relatives)          : '';
+
     return [
       csvEscape(p.firstName),
       csvEscape(p.lastName),
-      csvEscape(email1),
-      csvEscape(phone1),
-      csvEscape(additionalPhones),
+      csvEscape(p.emails[0] || ''),
+      ...phoneCells,
       csvEscape(p.address1),
       csvEscape(p.city),
       csvEscape(p.state),
       csvEscape(p.zipCode),
       csvEscape(p.dateOfBirth),
-      csvEscape(p.aliases.join('; ')),
-      csvEscape(p.previousAddresses.join('; ')),
-      csvEscape(p.relatives.join('; ')),
+      csvEscape(p.age),
+      alsoSeenAs,
+      prevAddrs,
+      relatives,
       'TruePeopleSearch'
     ].join(',');
   });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ghl-contacts.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showMsg('download-msg','success','✓ ghl-contacts.csv downloaded. Follow the steps above to import into GHL.');
+}
 
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -432,6 +467,12 @@ function csvEscape(val) {
   const str = String(val);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) return '"' + str.replace(/"/g, '""') + '"';
   return str;
+}
+
+// Puts each item on its own line inside a quoted CSV cell — clean in GHL text area fields
+function csvMultiline(arr) {
+  if (!arr || !arr.length) return '';
+  return '"' + arr.join('\n').replace(/"/g, '""') + '"';
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
