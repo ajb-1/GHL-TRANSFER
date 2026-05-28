@@ -269,18 +269,28 @@ function parsePhones(text) {
       }
     }
 
-    // Skip duplicates
-    var isDupe = phones.some(function(p){ return p.cleanNumber === cleanNumber; });
-    if (!isDupe) {
-      phones.push({
-        number: number,
-        cleanNumber: cleanNumber,
-        type: type,
-        carrier: carrier,
-        lastReported: lastReported,
-        lastReportedDate: lastReportedDate,
-        isPossiblePrimary: isPossiblePrimary
-      });
+    // Handle duplicates — keep the version with the most data
+    var existingIdx = -1;
+    for (var k = 0; k < phones.length; k++) {
+      if (phones[k].cleanNumber === cleanNumber) { existingIdx = k; break; }
+    }
+
+    var phoneObj = {
+      number: number,
+      cleanNumber: cleanNumber,
+      type: type,
+      carrier: carrier,
+      lastReported: lastReported,
+      lastReportedDate: lastReportedDate,
+      isPossiblePrimary: isPossiblePrimary
+    };
+
+    if (existingIdx === -1) {
+      // New number — add it
+      phones.push(phoneObj);
+    } else if (lastReported && !phones[existingIdx].lastReported) {
+      // Found a better version with metadata — replace the empty one
+      phones[existingIdx] = phoneObj;
     }
 
     // Advance i to where we left off
