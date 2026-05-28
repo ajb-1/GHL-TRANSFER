@@ -5,111 +5,109 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TruePeopleSearch → GHL Importer</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f5f4f1; --surface: #ffffff; --surface2: #f0efe9;
-    --border: #e2e0d8; --border2: #ccc9be;
-    --text: #1a1917; --text2: #6b6860; --text3: #9a9890;
-    --accent: #1a1917; --accent-fg: #ffffff;
-    --green: #166534; --green-bg: #f0fdf4; --green-border: #bbf7d0;
-    --red: #991b1b; --red-bg: #fff1f2; --red-border: #fecdd3;
-    --blue: #1e40af; --blue-bg: #eff6ff; --blue-border: #bfdbfe;
-    --orange: #92400e; --orange-bg: #fffbeb; --orange-border: #fde68a;
-    --radius: 10px; --radius-sm: 6px;
-  }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; font-size: 15px; line-height: 1.6; }
-  .container { max-width: 700px; margin: 0 auto; }
-  .header { margin-bottom: 1.75rem; }
-  .header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-  .header p { font-size: 13px; color: var(--text2); margin-top: 3px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; margin-bottom: 1rem; }
-  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 1.1rem; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
-  .badge { background: var(--accent); color: var(--accent-fg); border-radius: 20px; font-size: 12px; font-weight: 500; padding: 2px 9px; }
-  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  .instructions { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1.1rem; }
-  .instructions-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); margin-bottom: 0.7rem; }
-  .inst-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
-  .inst-row:last-child { margin-bottom: 0; }
-  .inst-n { width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border2); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; color: var(--text2); }
-  .inst-text { font-size: 13px; color: var(--text); line-height: 1.55; }
-  .inst-text b { font-weight: 600; }
-  .inst-text code { font-family: monospace; font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
-  .info-box { border-radius: var(--radius-sm); padding: 10px 13px; font-size: 13px; margin-bottom: 1.1rem; display: flex; gap: 8px; }
-  .info-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
-  .info-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
-  .info-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  label.field-label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
-  textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-family: monospace; font-size: 12px; line-height: 1.5; color: var(--text); background: var(--surface); outline: none; resize: vertical; }
-  textarea:focus { border-color: var(--accent); }
-  .char-count { font-size: 12px; color: var(--text3); margin-top: 4px; text-align: right; }
-  .btn-row { display: flex; gap: 8px; margin-top: 1.1rem; flex-wrap: wrap; }
-  .btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-  .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border2); }
-  .btn-secondary:hover { background: var(--surface2); }
-  .btn-green { background: var(--green-bg); color: var(--green); border-color: var(--green-border); font-weight: 600; }
-  .btn-green:hover { background: #dcfce7; }
-  .divider { height: 1px; background: var(--border); margin: 1.1rem 0; }
-  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .data-field { background: var(--surface2); border-radius: var(--radius-sm); padding: 9px 11px; }
-  .data-field.full { grid-column: 1 / -1; }
-  .data-key { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 3px; }
-  .data-val { font-size: 13px; color: var(--text); line-height: 1.5; word-break: break-word; }
-  .tag { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2px 9px; font-size: 12px; margin: 2px 3px 2px 0; }
-  .queue-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
-  .queue-item { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
-  .queue-item-name { font-size: 14px; font-weight: 500; }
-  .queue-item-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .queue-remove { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 0 4px; line-height: 1; }
-  .queue-remove:hover { color: var(--red); }
-  .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.35); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .alert { border-radius: var(--radius-sm); padding: 10px 13px; font-size: 13px; margin-top: 10px; }
-  .alert-success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  .alert-error { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-  .steps { display: flex; align-items: center; margin-bottom: 1.5rem; }
-  .step-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text3); white-space: nowrap; }
-  .step-item.active { color: var(--text); font-weight: 500; }
-  .step-item.done { color: var(--green); }
-  .step-circle { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; background: var(--surface); }
-  .step-item.active .step-circle { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-  .step-item.done .step-circle { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
-  .step-connector { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f1;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--border2:#ccc9be;
+  --text:#1a1917;--text2:#6b6860;--text3:#9a9890;
+  --accent:#1a1917;--accent-fg:#fff;
+  --green:#166534;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --red:#991b1b;--red-bg:#fff1f2;--red-border:#fecdd3;
+  --blue:#1e40af;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --orange:#92400e;--orange-bg:#fffbeb;--orange-border:#fde68a;
+  --r:10px;--rs:6px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem;font-size:15px;line-height:1.6}
+.container{max-width:720px;margin:0 auto}
+.header{margin-bottom:1.75rem}
+.header h1{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.header p{font-size:13px;color:var(--text2);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem}
+.card-title{font-size:15px;font-weight:600;margin-bottom:1.1rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.badge{background:var(--accent);color:var(--accent-fg);border-radius:20px;font-size:12px;font-weight:500;padding:2px 9px}
+.instr{background:var(--surface2);border-radius:var(--rs);padding:1rem 1.1rem;margin-bottom:1.1rem}
+.instr-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.7rem}
+.ir{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.ir:last-child{margin-bottom:0}
+.in{width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--text2)}
+.it{font-size:13px;color:var(--text);line-height:1.55}
+.it b{font-weight:600}
+.it code{font-family:monospace;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+.info-box{border-radius:var(--rs);padding:10px 13px;font-size:13px;margin-bottom:1.1rem;display:flex;gap:8px}
+.info-orange{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+textarea{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--rs);font-family:monospace;font-size:12px;line-height:1.5;color:var(--text);background:var(--surface);outline:none;resize:vertical}
+textarea:focus{border-color:var(--accent)}
+.char-count{font-size:12px;color:var(--text3);margin-top:4px;text-align:right}
+.btn-row{display:flex;gap:8px;margin-top:1.1rem;flex-wrap:wrap}
+.btn{padding:9px 18px;border-radius:var(--rs);font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn-primary:hover{opacity:.85}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border2)}
+.btn-secondary:hover{background:var(--surface2)}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border);font-weight:600}
+.btn-green:hover{background:#dcfce7}
+.divider{height:1px;background:var(--border);margin:1.1rem 0}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.df{background:var(--surface2);border-radius:var(--rs);padding:9px 11px}
+.df.full{grid-column:1/-1}
+.dk{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:3px}
+.dv{font-size:13px;color:var(--text);line-height:1.5;word-break:break-word}
+.tag{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:12px;margin:2px 3px 2px 0}
+.phone-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin:3px 0}
+.phone-num{font-size:13px;font-weight:600;color:var(--text)}
+.phone-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.queue-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem}
+.qi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.qi-name{font-size:14px;font-weight:500}
+.qi-detail{font-size:12px;color:var(--text2);margin-top:2px}
+.qi-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1}
+.qi-rm:hover{color:var(--red)}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.alert{border-radius:var(--rs);padding:10px 13px;font-size:13px;margin-top:10px}
+.alert-success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.alert-error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.steps{display:flex;align-items:center;margin-bottom:1.5rem}
+.si{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text3);white-space:nowrap}
+.si.active{color:var(--text);font-weight:500}
+.si.done{color:var(--green)}
+.sc{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;background:var(--surface)}
+.si.active .sc{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.si.done .sc{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.scon{flex:1;height:1px;background:var(--border);margin:0 8px}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <h1>TruePeopleSearch → GHL Importer</h1>
-    <p>Extract contact data · Build a CSV · Import directly into GoHighLevel</p>
+    <p>Extract · Review · Download CSV · Import into GoHighLevel</p>
   </div>
 
   <!-- SCREEN 1: PASTE -->
   <div id="screen-paste">
     <div class="steps">
-      <div class="step-item active"><div class="step-circle">1</div>Paste &amp; extract</div>
-      <div class="step-connector"></div>
-      <div class="step-item"><div class="step-circle">2</div>Review &amp; queue</div>
-      <div class="step-connector"></div>
-      <div class="step-item"><div class="step-circle">3</div>Download &amp; import</div>
+      <div class="si active"><div class="sc">1</div>Paste &amp; extract</div>
+      <div class="scon"></div>
+      <div class="si"><div class="sc">2</div>Review &amp; queue</div>
+      <div class="scon"></div>
+      <div class="si"><div class="sc">3</div>Download &amp; import</div>
     </div>
     <div class="card">
       <div class="card-title">Paste a TruePeopleSearch profile</div>
-      <div class="instructions">
-        <div class="instructions-label">How to copy the page</div>
-        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">Open <b>truepeoplesearch.com</b> in another tab and open the person's full profile</div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click anywhere on the page then press <b>Ctrl+A</b> (Windows) or <b>Cmd+A</b> (Mac) to select all</div></div>
-        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Press <b>Ctrl+C</b> (Windows) or <b>Cmd+C</b> (Mac) to copy</div></div>
-        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">Click in the box below and press <b>Ctrl+V</b> (Windows) or <b>Cmd+V</b> (Mac) to paste</div></div>
+      <div class="instr">
+        <div class="instr-label">How to copy the page</div>
+        <div class="ir"><div class="in">1</div><div class="it">Open <b>truepeoplesearch.com</b> in another tab and open the person's full profile</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Click anywhere on the page then press <b>Ctrl+A</b> (Windows) or <b>Cmd+A</b> (Mac) to select all</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Press <b>Ctrl+C</b> to copy then click in the box below and press <b>Ctrl+V</b> to paste</div></div>
       </div>
-      <label class="field-label" for="raw-text">Paste profile text here</label>
+      <label style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Paste profile text here</label>
       <textarea id="raw-text" rows="11" placeholder="Paste the full TruePeopleSearch page text here..."></textarea>
       <div class="char-count" id="char-count">0 characters</div>
       <div id="paste-msg"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" id="extract-btn" onclick="extractData()">⚡ Extract info</button>
+        <button class="btn btn-primary" id="extract-btn" onclick="extractData()">&#9889; Extract info</button>
       </div>
     </div>
   </div>
@@ -117,19 +115,19 @@
   <!-- SCREEN 2: REVIEW -->
   <div id="screen-review" style="display:none">
     <div class="steps">
-      <div class="step-item done"><div class="step-circle">✓</div>Paste &amp; extract</div>
-      <div class="step-connector"></div>
-      <div class="step-item active"><div class="step-circle">2</div>Review &amp; queue</div>
-      <div class="step-connector"></div>
-      <div class="step-item"><div class="step-circle">3</div>Download &amp; import</div>
+      <div class="si done"><div class="sc">&#10003;</div>Paste &amp; extract</div>
+      <div class="scon"></div>
+      <div class="si active"><div class="sc">2</div>Review &amp; queue</div>
+      <div class="scon"></div>
+      <div class="si"><div class="sc">3</div>Download &amp; import</div>
     </div>
     <div class="card">
-      <div class="card-title">Review extracted data <span id="review-name" style="color:var(--text2);font-weight:400;font-size:14px;"></span></div>
+      <div class="card-title">Review extracted data <span id="review-name" style="color:var(--text2);font-weight:400;font-size:14px"></span></div>
       <div class="data-grid" id="data-grid"></div>
       <div class="divider"></div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="addToQueue()">+ Add to CSV queue</button>
-        <button class="btn btn-secondary" onclick="goBackToPaste()">← Extract another</button>
+        <button class="btn btn-secondary" onclick="goBackToPaste()">&#8592; Extract another</button>
       </div>
     </div>
   </div>
@@ -137,13 +135,12 @@
   <!-- SCREEN 3: QUEUE + DOWNLOAD -->
   <div id="screen-queue" style="display:none">
     <div class="steps">
-      <div class="step-item done"><div class="step-circle">✓</div>Paste &amp; extract</div>
-      <div class="step-connector"></div>
-      <div class="step-item done"><div class="step-circle">✓</div>Review &amp; queue</div>
-      <div class="step-connector"></div>
-      <div class="step-item active"><div class="step-circle">3</div>Download &amp; import</div>
+      <div class="si done"><div class="sc">&#10003;</div>Paste &amp; extract</div>
+      <div class="scon"></div>
+      <div class="si done"><div class="sc">&#10003;</div>Review &amp; queue</div>
+      <div class="scon"></div>
+      <div class="si active"><div class="sc">3</div>Download &amp; import</div>
     </div>
-
     <div class="card">
       <div class="card-title">CSV queue <span class="badge" id="queue-count">0</span></div>
       <div class="queue-list" id="queue-list"></div>
@@ -151,41 +148,39 @@
         <button class="btn btn-secondary" onclick="goBackToPaste()">+ Add more profiles</button>
       </div>
     </div>
-
     <div class="card">
-      <div class="card-title">⬇ Download &amp; import into GHL</div>
-      <div class="info-orange" style="margin-bottom:1rem;">
-        <span>⚠</span>
-        <span><b>Before importing:</b> You need to create 3 custom fields in GHL first so relatives, previous addresses, and aliases import correctly. See step 2 below.</span>
+      <div class="card-title">&#11015; Download &amp; import into GHL</div>
+      <div class="info-orange">
+        <span>&#9888;</span>
+        <span><b>Before importing:</b> Create the custom fields in GHL first (Step 2 below). You only do this once.</span>
       </div>
-      <div class="instructions">
-        <div class="instructions-label">Step 1 — Download your CSV</div>
-        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">Click <b>Download CSV</b> below — a file called <code>ghl-contacts.csv</code> will save to your Downloads folder</div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">This file contains all <span id="dl-count">0</span> people you queued, formatted exactly for GHL import</div></div>
+      <div class="instr">
+        <div class="instr-label">Step 1 — Download your CSV</div>
+        <div class="ir"><div class="in">1</div><div class="it">Click <b>Download CSV</b> below — a file called <code>ghl-contacts.csv</code> saves to your Downloads folder</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Phones are sorted most recent to oldest. Phone 1 is the most recently reported number and will be the primary dialable number in GHL</div></div>
       </div>
-      <div class="instructions" style="margin-top:10px;">
-        <div class="instructions-label">Step 2 — Create custom fields in GHL (one-time setup)</div>
-        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">In GHL go to <b>Settings</b> in the left sidebar → click <b>Custom Fields</b></div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text</b> → name it exactly: <code>Age</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Phone</b> → name it exactly: <code>Phone 2</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Phone</b> → name it exactly: <code>Phone 3</code> → Save. Repeat for <code>Phone 4</code>, <code>Phone 5</code> etc. if needed</div></div>
-        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Also Seen As</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">6</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Previous Addresses</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">7</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text Area</b> → name it exactly: <code>Possible Relatives</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">8</div><div class="inst-text">Click <b>+ Add Field</b> → select <b>Text</b> → name it exactly: <code>Date of Birth</code> → Save</div></div>
-        <div class="inst-row"><div class="inst-n">9</div><div class="inst-text">You only do this once — all fields will be available for every future import</div></div>
+      <div class="instr">
+        <div class="instr-label">Step 2 — Create custom fields in GHL (one-time setup)</div>
+        <div class="ir"><div class="in">1</div><div class="it">In GHL go to <b>Settings</b> in the left sidebar &#8594; click <b>Custom Fields</b></div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text</b> &#8594; name it exactly: <code>Age</code> &#8594; Save</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text</b> &#8594; name it exactly: <code>Date of Birth</code> &#8594; Save</div></div>
+        <div class="ir"><div class="in">4</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text Area</b> &#8594; name it exactly: <code>Phone Details</code> &#8594; Save. <b>This stores every phone number with its type, carrier, and last reported date</b></div></div>
+        <div class="ir"><div class="in">5</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text Area</b> &#8594; name it exactly: <code>Also Seen As</code> &#8594; Save</div></div>
+        <div class="ir"><div class="in">6</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text Area</b> &#8594; name it exactly: <code>Previous Addresses</code> &#8594; Save</div></div>
+        <div class="ir"><div class="in">7</div><div class="it">Click <b>+ Add Field</b> &#8594; select <b>Text Area</b> &#8594; name it exactly: <code>Possible Relatives</code> &#8594; Save</div></div>
+        <div class="ir"><div class="in">8</div><div class="it">You only do this once &#8212; all fields will be available for every future import</div></div>
       </div>
-      <div class="instructions" style="margin-top:10px;">
-        <div class="instructions-label">Step 3 — Import the CSV into GHL</div>
-        <div class="inst-row"><div class="inst-n">1</div><div class="inst-text">In GHL go to <b>Contacts</b> in the left sidebar</div></div>
-        <div class="inst-row"><div class="inst-n">2</div><div class="inst-text">Click the <b>Import</b> icon (arrow pointing up) near the top right</div></div>
-        <div class="inst-row"><div class="inst-n">3</div><div class="inst-text">Click <b>Select File</b> and choose <code>ghl-contacts.csv</code> from your Downloads folder</div></div>
-        <div class="inst-row"><div class="inst-n">4</div><div class="inst-text">On the field mapping screen, these map <b>automatically</b>: First Name, Last Name, Email, Phone, Address1, City, State, Postal Code</div></div>
-        <div class="inst-row"><div class="inst-n">5</div><div class="inst-text">For the remaining columns, use the dropdown to manually map each one to the custom field you created: <code>Phone 2</code> → Phone 2, <code>Phone 3</code> → Phone 3, <code>Age</code> → Age, <code>Date of Birth</code> → Date of Birth, <code>Also Seen As</code> → Also Seen As, <code>Previous Addresses</code> → Previous Addresses, <code>Possible Relatives</code> → Possible Relatives</div></div>
-        <div class="inst-row"><div class="inst-n">6</div><div class="inst-text">Click <b>Next</b> → then <b>Import</b> — contacts appear in GHL within a few minutes</div></div>
+      <div class="instr">
+        <div class="instr-label">Step 3 — Import the CSV into GHL</div>
+        <div class="ir"><div class="in">1</div><div class="it">In GHL go to <b>Contacts</b> in the left sidebar</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Click the <b>Import</b> icon (arrow pointing up) near the top right</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Click <b>Select File</b> and choose <code>ghl-contacts.csv</code> from your Downloads folder</div></div>
+        <div class="ir"><div class="in">4</div><div class="it">On the mapping screen these auto-map: <b>First Name, Last Name, Email, Phone, Address1, City, State, Postal Code</b></div></div>
+        <div class="ir"><div class="in">5</div><div class="it">Manually map the rest using the dropdown: <code>Age</code> &#8594; Age, <code>Date of Birth</code> &#8594; Date of Birth, <code>Phone Details</code> &#8594; Phone Details, <code>Also Seen As</code> &#8594; Also Seen As, <code>Previous Addresses</code> &#8594; Previous Addresses, <code>Possible Relatives</code> &#8594; Possible Relatives</div></div>
+        <div class="ir"><div class="in">6</div><div class="it">Click <b>Next</b> then <b>Import</b> &#8212; contacts appear in GHL within minutes</div></div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-green" id="download-btn" onclick="downloadCSV()">⬇ Download CSV</button>
+        <button class="btn btn-green" onclick="downloadCSV()">&#11015; Download CSV</button>
       </div>
       <div id="download-msg"></div>
     </div>
@@ -193,287 +188,424 @@
 </div>
 
 <script>
-let queue = [];
-let currentParsed = null;
+var queue = [];
+var currentParsed = null;
 
-// ── Character count ──────────────────────────────────────────────────────────
-document.getElementById('raw-text').addEventListener('input', function() {
+// Month lookup for date sorting
+var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+document.getElementById('raw-text').addEventListener('input', function(){
   document.getElementById('char-count').textContent = this.value.length.toLocaleString() + ' characters';
 });
 
-// ── Parser ───────────────────────────────────────────────────────────────────
+// ── Parse date string like "Mar 2021" to Date for sorting ──────────────────
+function parseReportedDate(str) {
+  if (!str) return new Date(0);
+  var m = str.match(/([A-Za-z]{3})\s+(\d{4})/);
+  if (!m) return new Date(0);
+  var mo = MONTHS[m[1].toLowerCase()];
+  if (mo === undefined) return new Date(0);
+  return new Date(parseInt(m[2]), mo, 1);
+}
+
+// ── Parse phones with full metadata ────────────────────────────────────────
+function parsePhones(text) {
+  // Step 1: rejoin area codes split across lines by TruePeopleSearch link formatting
+  var rejoined = text.replace(/(\(\d{3}\))\s*\n\s*/g, '$1 ');
+
+  var phones = [];
+  var lines = rejoined.split('\n');
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+
+    // Match a phone number line: (XXX) XXX-XXXX or XXX-XXX-XXXX or XXX.XXX.XXXX
+    var phoneMatch = line.match(/(\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4})/);
+    if (!phoneMatch) continue;
+
+    var number = phoneMatch[1].trim();
+    // Clean number to digits only for GHL primary phone field
+    var cleanNumber = number.replace(/\D/g, '');
+
+    // Extract type from same line (after the number and optional dash/hyphen)
+    var afterNumber = line.replace(phoneMatch[1], '').replace(/^\s*[-–]\s*/, '').trim();
+    var type = '';
+    var typeMatch = afterNumber.match(/^(Wireless|Landline|Voip|VoIP|Mobile|Cell|Work|Home|Fax)/i);
+    if (typeMatch) type = typeMatch[1];
+
+    // Look at next line for "Last reported" info
+    var carrier = '';
+    var lastReported = '';
+    var lastReportedDate = new Date(0);
+    if (i + 1 < lines.length) {
+      var nextLine = lines[i + 1].trim();
+      var lrMatch = nextLine.match(/Last\s+reported\s+([A-Za-z]{3}\s+\d{4})\s*(.*)/i);
+      if (lrMatch) {
+        lastReported = lrMatch[1].trim();
+        carrier = lrMatch[2].trim();
+        lastReportedDate = parseReportedDate(lastReported);
+        i++; // skip next line since we consumed it
+      }
+    }
+
+    // Skip duplicates
+    var isDupe = phones.some(function(p){ return p.cleanNumber === cleanNumber; });
+    if (!isDupe) {
+      phones.push({ number: number, cleanNumber: cleanNumber, type: type, carrier: carrier, lastReported: lastReported, lastReportedDate: lastReportedDate });
+    }
+  }
+
+  // Sort most recent first
+  phones.sort(function(a, b){ return b.lastReportedDate - a.lastReportedDate; });
+  return phones;
+}
+
+// ── Main parser ─────────────────────────────────────────────────────────────
 function parseProfile(text) {
-  const result = {
-    firstName: '', lastName: '', middleName: '', fullName: '',
-    age: '', dateOfBirth: '', emails: [], phones: [],
-    address1: '', city: '', state: '', zipCode: '',
-    previousAddresses: [], relatives: [], aliases: []
+  var result = {
+    firstName:'', lastName:'', middleName:'', fullName:'',
+    age:'', dateOfBirth:'',
+    emails:[], phones:[],
+    address1:'', city:'', state:'', zipCode:'',
+    previousAddresses:[], relatives:[], aliases:[]
   };
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-  // Pre-process: rejoin phone numbers split across lines
-  // TruePeopleSearch makes area codes clickable links so they land on separate lines when copied
-  // e.g. "(317) \n708-5412" needs to become "(317) 708-5412"
-  const rejoined = text.replace(/(\(\d{3}\))\s*\n\s*(\d{3}[-.\s]\d{4})/g, '$1 $2');
-
-  // Phones — run against rejoined text
-  const phoneRegex = /(\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4})/g;
-  result.phones = [...new Set(rejoined.match(phoneRegex) || [])].map(p => p.trim());
+  var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
 
   // Emails
-  const emailRegex = /[\w.+-]+@[\w-]+\.[a-z]{2,}/gi;
-  result.emails = [...new Set(text.match(emailRegex) || [])];
+  var emailMatches = text.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/gi) || [];
+  result.emails = emailMatches.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   // Age
-  const ageM = text.match(/\bAge[:\s]+(\d{1,3})\b/i);
+  var ageM = text.match(/\bAge[:\s]+(\d{1,3})\b/i);
   if (ageM) result.age = ageM[1];
 
-  // DOB — handles "Born February 1947" (month+year) and "Born February 15, 1947" (full date)
-  const dobM = text.match(/\bBorn\s+((January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s*\d{4}|(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/i);
+  // DOB — handles "Born February 1947" and "Born February 15, 1947"
+  var dobM = text.match(/\bBorn\s+((January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s*\d{4}|(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/i);
   if (dobM) result.dateOfBirth = dobM[1].trim();
 
-  // Section extractor
+  // Phones with metadata
+  result.phones = parsePhones(text);
+
+  // Section extractor helper
   function extractSection(startKws, stopKws) {
-    const tl = text.toLowerCase();
-    let start = -1;
-    for (const kw of startKws) { const i = tl.indexOf(kw.toLowerCase()); if (i !== -1) { start = i + kw.length; break; } }
+    var tl = text.toLowerCase();
+    var start = -1;
+    for (var i=0; i<startKws.length; i++) {
+      var idx = tl.indexOf(startKws[i].toLowerCase());
+      if (idx !== -1) { start = idx + startKws[i].length; break; }
+    }
     if (start === -1) return '';
-    let end = text.length;
-    for (const kw of stopKws) { const i = tl.indexOf(kw.toLowerCase(), start); if (i !== -1 && i < end) end = i; }
+    var end = text.length;
+    for (var j=0; j<stopKws.length; j++) {
+      var idx2 = tl.indexOf(stopKws[j].toLowerCase(), start);
+      if (idx2 !== -1 && idx2 < end) end = idx2;
+    }
     return text.slice(start, end).trim();
   }
-  const stopWords = ['phone number','email address','current address','associated address','previous address','possible relative','also seen as','also known as','background','court record','social media','neighbor','property'];
 
-  // Name
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  var stopWords = ['phone number','email address','current address','associated address',
+    'previous address','possible relative','also seen as','also known as',
+    'background','court record','social media','neighbor','property'];
+
+  // Name — scan all lines for a proper name pattern
+  for (var i=0; i<lines.length; i++) {
+    var line = lines[i];
     if (/^(home|search|people|background|menu|skip|sign|log|find|true)/i.test(line)) continue;
     if (/^\d/.test(line)) continue;
     if (line.length < 4 || line.length > 60) continue;
-    if (/age\s+\d|phone|address|email|relative|known|seen/i.test(line)) continue;
-    const words = line.split(/\s+/).filter(w => /^[A-Z][a-z]+$|^[A-Z]+$/.test(w));
+    if (/age\s+\d|phone|address|email|relative|known|seen|last\s+reported/i.test(line)) continue;
+    var words = line.split(/\s+/).filter(function(w){ return /^[A-Z][a-z]+$|^[A-Z]+$/.test(w); });
     if (words.length >= 2 && words.length <= 4) {
       result.fullName = line;
       result.firstName = words[0] || '';
-      result.lastName = words[words.length - 1] || '';
-      if (words.length >= 3) result.middleName = words.slice(1, -1).join(' ');
+      result.lastName = words[words.length-1] || '';
+      if (words.length >= 3) result.middleName = words.slice(1,-1).join(' ');
       break;
     }
   }
 
-  // Aliases (Also Seen As)
-  const aliasSection = extractSection(['also seen as','also known as','aliases','other names'], stopWords.filter(s => !s.includes('also')));
+  // Also Seen As
+  var aliasSection = extractSection(
+    ['also seen as','also known as','aliases','other names'],
+    stopWords.filter(function(s){ return s.indexOf('also')===-1; })
+  );
   if (aliasSection) {
-    const cleaned = aliasSection.replace(/([a-z])([A-Z])/g, '$1\n$2');
-    cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 2).forEach(line => {
+    var cleaned = aliasSection.replace(/([a-z])([A-Z])/g,'$1\n$2');
+    cleaned.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length>2; }).forEach(function(line){
       if (/^includes\s/i.test(line)) return;
       if (/\d/.test(line)) return;
       if (/search|lookup|services|reverse|privacy|terms|background/i.test(line)) return;
-      line.split(',').map(s => s.trim()).filter(s => s.length > 2).forEach(name => {
-        const words = name.split(/\s+/);
-        if (words.length >= 2 && words.length <= 6 && words.every(w => /^[A-Z][a-zA-Z'-]*\.?$/.test(w)) && !result.aliases.includes(name)) result.aliases.push(name);
+      line.split(',').map(function(s){ return s.trim(); }).filter(function(s){ return s.length>2; }).forEach(function(name){
+        var ws = name.split(/\s+/);
+        if (ws.length>=2 && ws.length<=6 && ws.every(function(w){ return /^[A-Z][a-zA-Z'-]*\.?$/.test(w); }) && result.aliases.indexOf(name)===-1)
+          result.aliases.push(name);
       });
     });
   }
 
   // Current address
-  const addrSection = extractSection(['current address','current home address'], ['associated address','previous address','possible relative','phone number','email','also seen','also known']);
+  var addrSection = extractSection(
+    ['current address','current home address'],
+    ['associated address','previous address','possible relative','phone number','email','also seen','also known']
+  );
   if (addrSection) {
-    const addrLines = addrSection.split('\n').map(l => l.trim()).filter(l => l);
-    const streetLine = addrLines.find(l => /^\d+\s+\w/.test(l));
+    var addrLines = addrSection.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l; });
+    var streetLine = addrLines.find ? addrLines.find(function(l){ return /^\d+\s+\w/.test(l); }) : null;
+    if (!streetLine) { for(var k=0;k<addrLines.length;k++){ if(/^\d+\s+\w/.test(addrLines[k])){ streetLine=addrLines[k]; break; } } }
     if (streetLine) result.address1 = streetLine;
-    const cityStateZip = addrLines.find(l => /[A-Z]{2}\s+\d{5}/.test(l) || /,\s*[A-Z]{2}/.test(l));
-    if (cityStateZip) {
-      const zipM = cityStateZip.match(/\b(\d{5}(-\d{4})?)\b/);
-      if (zipM) result.zipCode = zipM[1];
-      const stateM = cityStateZip.match(/\b([A-Z]{2})\b/);
-      if (stateM) result.state = stateM[1];
-      const cityM = cityStateZip.replace(/\b[A-Z]{2}\b.*/, '').replace(/,/g, '').trim();
+    var czLine = null;
+    for(var k=0;k<addrLines.length;k++){ if(/[A-Z]{2}\s+\d{5}|,\s*[A-Z]{2}/.test(addrLines[k])){ czLine=addrLines[k]; break; } }
+    if (czLine) {
+      var zipM2 = czLine.match(/\b(\d{5}(-\d{4})?)\b/);
+      if (zipM2) result.zipCode = zipM2[1];
+      var stM = czLine.match(/\b([A-Z]{2})\b/);
+      if (stM) result.state = stM[1];
+      var cityM = czLine.replace(/\b[A-Z]{2}\b.*/,'').replace(/,/g,'').trim();
       if (cityM) result.city = cityM;
     }
   }
 
   // Previous addresses
-  const prevSection = extractSection(['associated addresses','previous addresses','past addresses','former addresses'], ['possible relative','phone number','email','background','court','social media']);
+  var prevSection = extractSection(
+    ['associated addresses','previous addresses','past addresses','former addresses'],
+    ['possible relative','phone number','email','background','court','social media']
+  );
   if (prevSection) {
-    let cur = '';
-    prevSection.split('\n').map(l => l.trim()).filter(l => l).forEach(line => {
+    var cur = '';
+    prevSection.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l; }).forEach(function(line){
       if (/^\d+\s+\w/.test(line)) { cur = line; }
-      else if (/[A-Z]{2}\s+\d{5}|,\s*[A-Z]{2}/.test(line) && cur) { result.previousAddresses.push(cur + ', ' + line.trim()); cur = ''; }
+      else if (/[A-Z]{2}\s+\d{5}|,\s*[A-Z]{2}/.test(line) && cur) { result.previousAddresses.push(cur+', '+line.trim()); cur=''; }
       else if (/[A-Z]{2}\s+\d{5}|,\s*[A-Z]{2}/.test(line)) { result.previousAddresses.push(line.trim()); }
     });
-    if (cur && !result.previousAddresses.includes(cur)) result.previousAddresses.push(cur);
+    if (cur && result.previousAddresses.indexOf(cur)===-1) result.previousAddresses.push(cur);
   }
 
   // Relatives
-  const relSection = extractSection(['possible relatives','known associates','associated people'], ['phone number','email','address','background','court','social media','neighbor']);
+  var relSection = extractSection(
+    ['possible relatives','known associates','associated people'],
+    ['phone number','email','address','background','court','social media','neighbor']
+  );
   if (relSection) {
-    relSection.split('\n').map(l => l.trim()).filter(l => l.length > 2).forEach(line => {
-      if (/^age\s*\d/i.test(line) || /^\d/.test(line)) return;
+    relSection.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length>2; }).forEach(function(line){
+      if (/^age\s*\d/i.test(line)||/^\d/.test(line)) return;
       if (/search|lookup|services|reverse|privacy|terms|background/i.test(line)) return;
-      const words = line.split(/\s+/);
-      if (words.length >= 2 && words.length <= 6 && /^[A-Za-z]/.test(line) && !result.relatives.includes(line)) result.relatives.push(line);
+      var ws = line.split(/\s+/);
+      if (ws.length>=2 && ws.length<=6 && /^[A-Za-z]/.test(line) && result.relatives.indexOf(line)===-1)
+        result.relatives.push(line);
     });
   }
 
   return result;
 }
 
-// ── Extract ──────────────────────────────────────────────────────────────────
+// ── Extract ─────────────────────────────────────────────────────────────────
 function extractData() {
-  const raw = document.getElementById('raw-text').value.trim();
+  var raw = document.getElementById('raw-text').value.trim();
   if (!raw) { showMsg('paste-msg','error','Please paste the profile text first.'); return; }
-  if (raw.length < 100) { showMsg('paste-msg','error','Text seems too short — make sure you pressed Ctrl+A to select the whole page before copying.'); return; }
-  const btn = document.getElementById('extract-btn');
+  if (raw.length < 100) { showMsg('paste-msg','error','Text seems too short — press Ctrl+A to select the whole page before copying.'); return; }
+  var btn = document.getElementById('extract-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Extracting...';
-  setTimeout(() => {
+  setTimeout(function(){
     currentParsed = parseProfile(raw);
     renderDataGrid(currentParsed);
-    document.getElementById('review-name').textContent = currentParsed.fullName ? '— ' + currentParsed.fullName : '';
+    document.getElementById('review-name').textContent = currentParsed.fullName ? '— '+currentParsed.fullName : '';
     show('screen-review');
-    btn.disabled = false; btn.innerHTML = '⚡ Extract info';
+    btn.disabled = false; btn.innerHTML = '&#9889; Extract info';
   }, 250);
 }
 
 // ── Render data grid ─────────────────────────────────────────────────────────
 function renderDataGrid(data) {
-  const grid = document.getElementById('data-grid');
+  var grid = document.getElementById('data-grid');
   grid.innerHTML = '';
-  const fields = [
-    {key:'fullName',label:'Full name'},{key:'firstName',label:'First name'},{key:'lastName',label:'Last name'},
-    {key:'middleName',label:'Middle name'},{key:'age',label:'Age'},{key:'dateOfBirth',label:'Date of birth'},
-    {key:'phones',label:'Phone numbers',full:true,list:true},{key:'emails',label:'Emails',full:true,list:true},
-    {key:'address1',label:'Address'},{key:'city',label:'City'},{key:'state',label:'State'},{key:'zipCode',label:'ZIP'},
-    {key:'aliases',label:'Also seen as',full:true,list:true},
-    {key:'previousAddresses',label:'Previous addresses',full:true,list:true},
-    {key:'relatives',label:'Possible relatives',full:true,list:true}
-  ];
-  fields.forEach(f => {
-    const val = data[f.key];
-    if (!val || (Array.isArray(val) && !val.length) || val === '') return;
-    const div = document.createElement('div');
-    div.className = 'data-field' + (f.full ? ' full' : '');
-    const key = document.createElement('div'); key.className = 'data-key'; key.textContent = f.label;
-    const valEl = document.createElement('div'); valEl.className = 'data-val';
-    if (f.list && Array.isArray(val)) { val.forEach(v => { const t = document.createElement('span'); t.className = 'tag'; t.textContent = v; valEl.appendChild(t); }); }
-    else { valEl.textContent = val; }
-    div.appendChild(key); div.appendChild(valEl); grid.appendChild(div);
-  });
+
+  function addField(label, val, full) {
+    if (!val || (Array.isArray(val) && !val.length)) return;
+    var d = document.createElement('div'); d.className = 'df'+(full?' full':'');
+    var k = document.createElement('div'); k.className='dk'; k.textContent=label;
+    var v = document.createElement('div'); v.className='dv';
+    if (Array.isArray(val)) { val.forEach(function(item){ var t=document.createElement('span'); t.className='tag'; t.textContent=item; v.appendChild(t); }); }
+    else { v.textContent=val; }
+    d.appendChild(k); d.appendChild(v); grid.appendChild(d);
+  }
+
+  addField('Full name', data.fullName);
+  addField('First name', data.firstName);
+  addField('Last name', data.lastName);
+  addField('Middle name', data.middleName);
+  addField('Age', data.age);
+  addField('Date of birth', data.dateOfBirth);
+  addField('Email', data.emails.length ? data.emails.join(', ') : '', true);
+  addField('Address', data.address1);
+  addField('City', data.city);
+  addField('State', data.state);
+  addField('ZIP', data.zipCode);
+  addField('Also seen as', data.aliases, true);
+  addField('Previous addresses', data.previousAddresses, true);
+  addField('Possible relatives', data.relatives, true);
+
+  // Phones — show each as a block
+  if (data.phones.length) {
+    var d = document.createElement('div'); d.className='df full';
+    var k = document.createElement('div'); k.className='dk'; k.textContent='Phone numbers (sorted most recent first)';
+    d.appendChild(k);
+    data.phones.forEach(function(p, i){
+      var pb = document.createElement('div'); pb.className='phone-block';
+      var pn = document.createElement('div'); pn.className='phone-num';
+      pn.textContent = (i===0?'★ ':'')+p.number+(p.type?' — '+p.type:'');
+      var pm = document.createElement('div'); pm.className='phone-meta';
+      pm.textContent = [p.carrier, p.lastReported?'Last reported '+p.lastReported:''].filter(Boolean).join(' · ');
+      pb.appendChild(pn); if(pm.textContent) pb.appendChild(pm);
+      d.appendChild(pb);
+    });
+    grid.appendChild(d);
+  }
 }
 
-// ── Queue ────────────────────────────────────────────────────────────────────
+// ── Queue ───────────────────────────────────────────────────────────────────
 function addToQueue() {
   if (!currentParsed) return;
-  queue.push({ ...currentParsed });
+  queue.push(JSON.parse(JSON.stringify(currentParsed)));
   renderQueue();
   show('screen-queue');
-  document.getElementById('raw-text').value = '';
-  document.getElementById('char-count').textContent = '0 characters';
-  document.getElementById('paste-msg').innerHTML = '';
-  currentParsed = null;
+  document.getElementById('raw-text').value='';
+  document.getElementById('char-count').textContent='0 characters';
+  document.getElementById('paste-msg').innerHTML='';
+  currentParsed=null;
 }
 
 function renderQueue() {
-  const list = document.getElementById('queue-list');
-  list.innerHTML = '';
-  document.getElementById('queue-count').textContent = queue.length;
-  document.getElementById('dl-count').textContent = queue.length;
-  queue.forEach((p, i) => {
-    const item = document.createElement('div'); item.className = 'queue-item';
-    const info = document.createElement('div');
-    const name = document.createElement('div'); name.className = 'queue-item-name'; name.textContent = p.fullName || 'Unknown name';
-    const detail = document.createElement('div'); detail.className = 'queue-item-detail';
-    detail.textContent = [p.phones[0], p.city && p.state ? p.city + ', ' + p.state : ''].filter(Boolean).join(' · ');
+  var list = document.getElementById('queue-list');
+  list.innerHTML='';
+  document.getElementById('queue-count').textContent=queue.length;
+  queue.forEach(function(p,i){
+    var item=document.createElement('div'); item.className='qi';
+    var info=document.createElement('div');
+    var name=document.createElement('div'); name.className='qi-name'; name.textContent=p.fullName||'Unknown';
+    var detail=document.createElement('div'); detail.className='qi-detail';
+    var ph = p.phones.length ? p.phones[0].number : '';
+    detail.textContent=[ph, p.city&&p.state?p.city+', '+p.state:''].filter(Boolean).join(' · ');
     info.appendChild(name); info.appendChild(detail);
-    const btn = document.createElement('button'); btn.className = 'queue-remove'; btn.textContent = '×';
-    btn.onclick = () => { queue.splice(i, 1); renderQueue(); if (queue.length === 0) show('screen-paste'); };
+    var btn=document.createElement('button'); btn.className='qi-rm'; btn.textContent='×';
+    btn.onclick=(function(idx){ return function(){ queue.splice(idx,1); renderQueue(); if(!queue.length) show('screen-paste'); }; })(i);
     item.appendChild(info); item.appendChild(btn); list.appendChild(item);
   });
 }
 
 // ── CSV Download ─────────────────────────────────────────────────────────────
 function downloadCSV() {
-  if (!queue.length) { showMsg('download-msg','error','No profiles in queue yet.'); return; }
+  if (!queue.length) { showMsg('download-msg','error','No profiles in queue.'); return; }
 
-  // Find max phones across all queued contacts
-  const maxPhones = Math.max(...queue.map(p => p.phones.length), 1);
+  // Find max phone count across all contacts
+  var maxPhones = 0;
+  queue.forEach(function(p){ if(p.phones.length>maxPhones) maxPhones=p.phones.length; });
+  if (maxPhones===0) maxPhones=1;
 
-  // Build phone column headers: Phone, Phone 2, Phone 3...
-  const phoneHeaders = ['Phone'];
-  for (let i = 2; i <= maxPhones; i++) phoneHeaders.push('Phone ' + i);
+  // Build headers — one column per phone number (no limit)
+  var headers = ['First Name','Last Name','Email','Address1','City','State','Postal Code','Date of Birth','Age'];
 
-  // Full headers — each phone gets its own column
-  const headers = [
-    'First Name', 'Last Name', 'Email',
-    ...phoneHeaders,
-    'Address1', 'City', 'State', 'Postal Code',
-    'Date of Birth', 'Age',
-    'Also Seen As',
-    'Previous Addresses',
-    'Possible Relatives',
-    'Source'
-  ];
+  // Phone column headers: Phone 1, Phone 1 Type, Phone 1 Carrier, Phone 1 Last Reported, Phone 2...
+  for (var i=1; i<=maxPhones; i++) {
+    headers.push('Phone '+i);
+    headers.push('Phone '+i+' Type');
+    headers.push('Phone '+i+' Carrier');
+    headers.push('Phone '+i+' Last Reported');
+  }
 
-  const rows = queue.map(p => {
-    // Each phone in its own cell
-    const phoneCells = [];
-    for (let i = 0; i < maxPhones; i++) {
-      phoneCells.push(csvEscape(p.phones[i] || ''));
+  headers.push('Phone Details');
+  headers.push('Also Seen As');
+  headers.push('Previous Addresses');
+  headers.push('Possible Relatives');
+  headers.push('Source');
+
+  var rows = queue.map(function(p){
+    var cells = [
+      ce(p.firstName),
+      ce(p.lastName),
+      ce(p.emails[0]||''),
+      ce(p.address1),
+      ce(p.city),
+      ce(p.state),
+      ce(p.zipCode),
+      ce(p.dateOfBirth),
+      ce(p.age)
+    ];
+
+    // Each phone in its own set of 4 columns
+    for (var i=0; i<maxPhones; i++) {
+      var ph = p.phones[i];
+      if (ph) {
+        cells.push(ce(ph.cleanNumber));  // digits only for GHL phone field
+        cells.push(ce(ph.type));
+        cells.push(ce(ph.carrier));
+        cells.push(ce(ph.lastReported));
+      } else {
+        cells.push('','','','');
+      }
     }
 
-    // Lists: each item on its own line inside the cell — clean and readable in GHL
-    const alsoSeenAs   = p.aliases.length           ? csvMultiline(p.aliases)           : '';
-    const prevAddrs    = p.previousAddresses.length  ? csvMultiline(p.previousAddresses)  : '';
-    const relatives    = p.relatives.length          ? csvMultiline(p.relatives)          : '';
+    // Phone Details — full summary, one per line
+    var phoneDetails = p.phones.map(function(ph,idx){
+      return [
+        (idx===0?'[Primary] ':'')+ph.number,
+        ph.type||'',
+        ph.carrier||'',
+        ph.lastReported?'Last reported '+ph.lastReported:''
+      ].filter(Boolean).join(' — ');
+    }).join('\n');
 
-    return [
-      csvEscape(p.firstName),
-      csvEscape(p.lastName),
-      csvEscape(p.emails[0] || ''),
-      ...phoneCells,
-      csvEscape(p.address1),
-      csvEscape(p.city),
-      csvEscape(p.state),
-      csvEscape(p.zipCode),
-      csvEscape(p.dateOfBirth),
-      csvEscape(p.age),
-      alsoSeenAs,
-      prevAddrs,
-      relatives,
-      'TruePeopleSearch'
-    ].join(',');
+    cells.push(cm(phoneDetails ? [phoneDetails] : []));
+    cells.push(cm(p.aliases));
+    cells.push(cm(p.previousAddresses));
+    cells.push(cm(p.relatives));
+    cells.push('TruePeopleSearch');
+
+    return cells.join(',');
   });
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'ghl-contacts.csv'; a.click();
+  var csv = [headers.join(',')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='ghl-contacts.csv'; a.click();
   URL.revokeObjectURL(url);
-  showMsg('download-msg','success','✓ ghl-contacts.csv downloaded. Follow the steps above to import into GHL.');
+  showMsg('download-msg','success','&#10003; ghl-contacts.csv downloaded. Follow Steps 2 and 3 above to import into GHL.');
 }
 
-function csvEscape(val) {
-  if (!val) return '';
-  const str = String(val);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) return '"' + str.replace(/"/g, '""') + '"';
-  return str;
+// CSV escape — plain value
+function ce(val) {
+  if (val===null||val===undefined||val==='') return '';
+  var s = String(val);
+  if (s.indexOf(',')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)
+    return '"'+s.replace(/"/g,'""')+'"';
+  return s;
 }
 
-// Puts each item on its own line inside a quoted CSV cell — clean in GHL text area fields
-function csvMultiline(arr) {
-  if (!arr || !arr.length) return '';
-  return '"' + arr.join('\n').replace(/"/g, '""') + '"';
+// CSV multiline — array to quoted multiline cell
+function cm(arr) {
+  if (!arr||!arr.length) return '';
+  var s = arr.join('\n').replace(/"/g,'""');
+  return '"'+s+'"';
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Navigation ───────────────────────────────────────────────────────────────
 function show(id) {
-  ['screen-paste','screen-review','screen-queue'].forEach(s => {
-    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  ['screen-paste','screen-review','screen-queue'].forEach(function(s){
+    document.getElementById(s).style.display = s===id?'block':'none';
   });
+  if (id==='screen-paste' && queue.length>0)
+    document.getElementById('screen-queue').style.display='block';
 }
-function goBackToPaste() { show('screen-paste'); if (queue.length > 0) { document.getElementById('screen-queue').style.display = 'block'; } }
-function showMsg(id, type, text) { document.getElementById(id).innerHTML = '<div class="alert alert-' + type + '">' + text + '</div>'; }
+
+function goBackToPaste() {
+  document.getElementById('screen-paste').style.display='block';
+  document.getElementById('screen-review').style.display='none';
+}
+
+function showMsg(id,type,text) {
+  document.getElementById(id).innerHTML='<div class="alert alert-'+type+'">'+text+'</div>';
+}
 </script>
 </body>
 </html>
