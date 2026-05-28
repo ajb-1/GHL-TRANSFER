@@ -210,53 +210,88 @@ function parseReportedDate(str) {
 
 // ── Parse phones with full metadata ────────────────────────────────────────
 function parsePhones(text) {
-  // Step 1: rejoin area codes split across lines by TruePeopleSearch link formatting
+  // Rejoin area codes split across lines by TruePeopleSearch link formatting
   var rejoined = text.replace(/(\(\d{3}\))\s*\n\s*/g, '$1 ');
-
+  var lines = rejoined.split('\n').map(function(l){ return l.trim(); });
   var phones = [];
-  var lines = rejoined.split('\n');
 
   for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
+    var line = lines[i];
 
-    // Match a phone number line: (XXX) XXX-XXXX or XXX-XXX-XXXX or XXX.XXX.XXXX
-    var phoneMatch = line.match(/(\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4})/);
+    // Match a phone number on this line: (XXX) XXX-XXXX
+    var phoneMatch = line.match(/(\(\d{3}\)\s*\d{3}[-.\s]\d{4}|\d{3}[-.\s]\d{3}[-.\s]\d{4})/);
     if (!phoneMatch) continue;
 
-    var number = phoneMatch[1].trim();
-    // Clean number to digits only for GHL primary phone field
-    var cleanNumber = number.replace(/\D/g, '');
+    var number = phoneMatch[1].replace(/\s+/g,' ').trim();
+    var cleanNumber = number.replace(/\D/g,'');
 
-    // Extract type from same line (after the number and optional dash/hyphen)
-    var afterNumber = line.replace(phoneMatch[1], '').replace(/^\s*[-–]\s*/, '').trim();
+    // Extract type from same line after the number
+    var afterNum = line.replace(phoneMatch[1],'').replace(/^\s*[-–]\s*/,'').trim();
     var type = '';
-    var typeMatch = afterNumber.match(/^(Wireless|Landline|Voip|VoIP|Mobile|Cell|Work|Home|Fax)/i);
+    var typeMatch = afterNum.match(/^(Wireless|Landline|Voip|VoIP|Mobile|Cell|Work|Home|Fax)/i);
     if (typeMatch) type = typeMatch[1];
 
-    // Look at next line for "Last reported" info
-    var carrier = '';
+    var isPossiblePrimary = false;
     var lastReported = '';
     var lastReportedDate = new Date(0);
-    if (i + 1 < lines.length) {
-      var nextLine = lines[i + 1].trim();
-      var lrMatch = nextLine.match(/Last\s+reported\s+([A-Za-z]{3}\s+\d{4})\s*(.*)/i);
+    var carrier = '';
+
+    // Look ahead through next lines to find metadata
+    var j = i + 1;
+
+    // Check for "Possible Primary Phone" label on next line
+    if (j < lines.length && /possible\s+primary\s+phone/i.test(lines[j])) {
+      isPossiblePrimary = true;
+      j++;
+    }
+
+    // Check for "Last reported [Month] [Year]" line
+    if (j < lines.length) {
+      var lrMatch = lines[j].match(/Last\s+reported\s+([A-Za-z]{3,9}\s+\d{4})/i);
       if (lrMatch) {
         lastReported = lrMatch[1].trim();
-        carrier = lrMatch[2].trim();
         lastReportedDate = parseReportedDate(lastReported);
-        i++; // skip next line since we consumed it
+        j++;
+
+        // Carrier is on the very next line after Last reported
+        if (j < lines.length) {
+          var nextLine = lines[j].trim();
+          // Make sure it is not another phone number or a known label
+          if (nextLine.length > 0
+            && !/^\(?\d{3}\)?/.test(nextLine)
+            && !/^last\s+reported/i.test(nextLine)
+            && !/^possible\s+primary/i.test(nextLine)
+            && !/^(wireless|landline|voip|mobile|cell)/i.test(nextLine)) {
+            carrier = nextLine;
+            j++;
+          }
+        }
       }
     }
 
     // Skip duplicates
     var isDupe = phones.some(function(p){ return p.cleanNumber === cleanNumber; });
     if (!isDupe) {
-      phones.push({ number: number, cleanNumber: cleanNumber, type: type, carrier: carrier, lastReported: lastReported, lastReportedDate: lastReportedDate });
+      phones.push({
+        number: number,
+        cleanNumber: cleanNumber,
+        type: type,
+        carrier: carrier,
+        lastReported: lastReported,
+        lastReportedDate: lastReportedDate,
+        isPossiblePrimary: isPossiblePrimary
+      });
     }
+
+    // Advance i to where we left off
+    i = j - 1;
   }
 
-  // Sort most recent first
-  phones.sort(function(a, b){ return b.lastReportedDate - a.lastReportedDate; });
+  // Sort by most recent Last Reported date first
+  phones.sort(function(a, b){
+    return b.lastReportedDate.getTime() - a.lastReportedDate.getTime();
+  });
+
   return phones;
 }
 
@@ -453,7 +488,7 @@ function renderDataGrid(data) {
     data.phones.forEach(function(p, i){
       var pb = document.createElement('div'); pb.className='phone-block';
       var pn = document.createElement('div'); pn.className='phone-num';
-      pn.textContent = (i===0?'★ ':'')+p.number+(p.type?' — '+p.type:'');
+      pn.textContent = (i===0?'★ ':'')+p.number+(p.type?' — '+p.type:'')+(p.isPossiblePrimary?' [Possible Primary]':'');
       var pm = document.createElement('div'); pm.className='phone-meta';
       pm.textContent = [p.carrier, p.lastReported?'Last reported '+p.lastReported:''].filter(Boolean).join(' · ');
       pb.appendChild(pn); if(pm.textContent) pb.appendChild(pm);
@@ -550,6 +585,7 @@ function downloadCSV() {
       return [
         (idx===0?'[Primary] ':'')+ph.number,
         ph.type||'',
+        ph.isPossiblePrimary?'Possible Primary':'',
         ph.carrier||'',
         ph.lastReported?'Last reported '+ph.lastReported:''
       ].filter(Boolean).join(' — ');
