@@ -353,36 +353,37 @@ function parseProfile(text) {
     'previous address','possible relative','also seen as','also known as',
     'background','court record','social media','neighbor','property'];
 
-  // Name — anchor to Age/Born line which always appears right after the name on TruePeopleSearch
-  // Search for Age XX or Born [Month] as an anchor, then look backwards for the name
-  var foundName = false;
-  for (var i = 0; i < lines.length && !foundName; i++) {
-    var anchorLine = lines[i];
+  // Name — TruePeopleSearch always shows: [Name] then Age XX / Born [Month]
+  // Use FIRST Age/Born line only — relatives may share the same age further down the page
+  var knownHeaders = /^(possible|also\s+seen|also\s+known|background|phone|email|current|associated|previous|registered|search|lookup|reverse|people|court|social|neighbor|property|service)/i;
 
-    // Find the Age/Born anchor line
-    if (!/\bAge\s+\d{1,3}\b/i.test(anchorLine) &&
-        !/\bBorn\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(anchorLine)) continue;
+  var firstAgeIdx = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (/\bAge\s+\d{1,3}\b/i.test(lines[i]) ||
+        /\bBorn\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(lines[i])) {
+      firstAgeIdx = i;
+      break; // stop at FIRST occurrence only
+    }
+  }
 
-    // Look backwards up to 4 lines for the name
-    for (var k = i - 1; k >= Math.max(0, i - 4) && !foundName; k--) {
+  if (firstAgeIdx > 0) {
+    // Look backwards up to 4 lines from first Age/Born for the name
+    for (var k = firstAgeIdx - 1; k >= Math.max(0, firstAgeIdx - 4) && !result.fullName; k--) {
       var candidate = lines[k];
       if (!candidate || candidate.length < 3 || candidate.length > 70) continue;
       if (/^\d/.test(candidate)) continue;
       if (/,/.test(candidate)) continue;
       if (/http|www\.|\.com/i.test(candidate)) continue;
+      if (knownHeaders.test(candidate)) continue;
 
       var totalWords = candidate.split(/\s+/);
       if (totalWords.length < 2 || totalWords.length > 5) continue;
 
-      // Every word must be title case (David) or all-caps min 3 letters (DAVID)
       var nameWords = totalWords.filter(function(w) {
         return /^[A-Z][a-z]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
       });
 
-      // All words must match — no partial matches
       if (nameWords.length === totalWords.length) {
-        foundName = true;
-        // Convert to Title Case (handles ALL CAPS names)
         var tc = nameWords.map(function(w) {
           return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
         });
