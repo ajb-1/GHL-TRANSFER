@@ -353,36 +353,44 @@ function parseProfile(text) {
     'previous address','possible relative','also seen as','also known as',
     'background','court record','social media','neighbor','property'];
 
-  // Name — scan lines for a proper name pattern
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (!line || line.length < 3 || line.length > 60) continue;
+  // Name — anchor to Age/Born line which always appears right after the name on TruePeopleSearch
+  // Search for Age XX or Born [Month] as an anchor, then look backwards for the name
+  var foundName = false;
+  for (var i = 0; i < lines.length && !foundName; i++) {
+    var anchorLine = lines[i];
 
-    // Skip lines that clearly are not names
-    if (/^\d/.test(line)) continue;
-    if (/,/.test(line)) continue; // addresses and city/state always have commas
-    if (/lives\s+in|lives\s+near|age[\s:]*\d|born|phone|address|email|relative|also\s+seen|also\s+known|last\s+reported|possible|primary|background|court|social|search|lookup|found|result/i.test(line)) continue;
-    if (/^(home|search|people|background|menu|skip|sign|log|find|true|lives|born|in|at|near|the)/i.test(line)) continue;
+    // Find the Age/Born anchor line
+    if (!/\bAge\s+\d{1,3}\b/i.test(anchorLine) &&
+        !/\bBorn\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(anchorLine)) continue;
 
-    var totalWords = line.split(/\s+/);
+    // Look backwards up to 4 lines for the name
+    for (var k = i - 1; k >= Math.max(0, i - 4) && !foundName; k--) {
+      var candidate = lines[k];
+      if (!candidate || candidate.length < 3 || candidate.length > 70) continue;
+      if (/^\d/.test(candidate)) continue;
+      if (/,/.test(candidate)) continue;
+      if (/http|www\.|\.com/i.test(candidate)) continue;
 
-    // Each word must be EITHER title case (David) OR all-caps min 3 letters (DAVID)
-    // This blocks "in", "IL", "MI" while allowing real names in any capitalisation
-    var nameWords = totalWords.filter(function(w) {
-      return /^[A-Z][a-z]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
-    });
+      var totalWords = candidate.split(/\s+/);
+      if (totalWords.length < 2 || totalWords.length > 5) continue;
 
-    // ALL words on the line must look like name words — blocks "Lives in CHICAGO IL"
-    if (nameWords.length >= 2 && nameWords.length <= 4 && nameWords.length === totalWords.length) {
-      // Convert to Title Case (handles ALL CAPS names like APPLE KING)
-      var tc = nameWords.map(function(w) {
-        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      // Every word must be title case (David) or all-caps min 3 letters (DAVID)
+      var nameWords = totalWords.filter(function(w) {
+        return /^[A-Z][a-z]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
       });
-      result.fullName = tc.join(' ');
-      result.firstName = tc[0] || '';
-      result.lastName = tc[tc.length - 1] || '';
-      if (tc.length >= 3) result.middleName = tc.slice(1, -1).join(' ');
-      break;
+
+      // All words must match — no partial matches
+      if (nameWords.length === totalWords.length) {
+        foundName = true;
+        // Convert to Title Case (handles ALL CAPS names)
+        var tc = nameWords.map(function(w) {
+          return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        });
+        result.fullName = tc.join(' ');
+        result.firstName = tc[0] || '';
+        result.lastName = tc[tc.length - 1] || '';
+        if (tc.length >= 3) result.middleName = tc.slice(1, -1).join(' ');
+      }
     }
   }
 
