@@ -353,45 +353,61 @@ function parseProfile(text) {
     'previous address','possible relative','also seen as','also known as',
     'background','court record','social media','neighbor','property'];
 
-  // Name — TruePeopleSearch always shows: [Name] then Age XX / Born [Month]
-  // Use FIRST Age/Born line only — relatives may share the same age further down the page
-  var knownHeaders = /^(possible|also\s+seen|also\s+known|background|phone|email|current|associated|previous|registered|search|lookup|reverse|people|court|social|neighbor|property|service)/i;
-
-  var firstAgeIdx = -1;
-  for (var i = 0; i < lines.length; i++) {
-    if (/\bAge\s+\d{1,3}\b/i.test(lines[i]) ||
-        /\bBorn\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(lines[i])) {
-      firstAgeIdx = i;
-      break; // stop at FIRST occurrence only
-    }
-  }
-
-  if (firstAgeIdx > 0) {
-    // Look backwards up to 4 lines from first Age/Born for the name
-    for (var k = firstAgeIdx - 1; k >= Math.max(0, firstAgeIdx - 4) && !result.fullName; k--) {
-      var candidate = lines[k];
-      if (!candidate || candidate.length < 3 || candidate.length > 70) continue;
-      if (/^\d/.test(candidate)) continue;
-      if (/,/.test(candidate)) continue;
-      if (/http|www\.|\.com/i.test(candidate)) continue;
-      if (knownHeaders.test(candidate)) continue;
-
-      var totalWords = candidate.split(/\s+/);
-      if (totalWords.length < 2 || totalWords.length > 5) continue;
-
-      var nameWords = totalWords.filter(function(w) {
-        return /^[A-Z][a-z]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
+  // Name extraction — two strategies
+  // Strategy 1: Extract from breadcrumb line which ALWAYS appears near the top
+  // Format: "Home / C / LastName / Full Name / State / City"
+  for (var i = 0; i < Math.min(lines.length, 25); i++) {
+    if (!/^Home\s*\//.test(lines[i])) continue;
+    var parts = lines[i].split('/').map(function(s){ return s.trim(); });
+    for (var p = 0; p < parts.length; p++) {
+      var part = parts[p];
+      if (!part || part.length < 4 || part.length > 60) continue;
+      var pWords = part.split(/\s+/);
+      if (pWords.length < 2 || pWords.length > 5) continue;
+      var pNameWords = pWords.filter(function(w){
+        return /^[A-Z][a-zA-Z'-]{1,}$/.test(w);
       });
-
-      if (nameWords.length === totalWords.length) {
-        var tc = nameWords.map(function(w) {
+      if (pNameWords.length === pWords.length) {
+        var tc = pNameWords.map(function(w){
           return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
         });
         result.fullName = tc.join(' ');
         result.firstName = tc[0] || '';
-        result.lastName = tc[tc.length - 1] || '';
-        if (tc.length >= 3) result.middleName = tc.slice(1, -1).join(' ');
+        result.lastName = tc[tc.length-1] || '';
+        if (tc.length >= 3) result.middleName = tc.slice(1,-1).join(' ');
+        break;
       }
+    }
+    if (result.fullName) break;
+  }
+
+  // Strategy 2: Fallback — look at line immediately before first Age/Born line
+  if (!result.fullName) {
+    for (var i = 0; i < lines.length; i++) {
+      if (!/\bAge\s+\d{1,3}\b/i.test(lines[i]) &&
+          !/\bBorn\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(lines[i])) continue;
+      // Check 1-3 lines before this
+      for (var k = i-1; k >= Math.max(0, i-3) && !result.fullName; k--) {
+        var candidate = lines[k];
+        if (!candidate || candidate.length < 3 || candidate.length > 60) continue;
+        if (/^\d/.test(candidate) || /,/.test(candidate)) continue;
+        if (/possible|relative|background|phone|email|address|search|registered|offender/i.test(candidate)) continue;
+        var cWords = candidate.split(/\s+/);
+        if (cWords.length < 2 || cWords.length > 5) continue;
+        var cNameWords = cWords.filter(function(w){
+          return /^[A-Z][a-zA-Z'-]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
+        });
+        if (cNameWords.length === cWords.length) {
+          var tc2 = cNameWords.map(function(w){
+            return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+          });
+          result.fullName = tc2.join(' ');
+          result.firstName = tc2[0] || '';
+          result.lastName = tc2[tc2.length-1] || '';
+          if (tc2.length >= 3) result.middleName = tc2.slice(1,-1).join(' ');
+        }
+      }
+      break; // only use FIRST Age/Born occurrence
     }
   }
 
