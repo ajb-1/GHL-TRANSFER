@@ -353,19 +353,35 @@ function parseProfile(text) {
     'previous address','possible relative','also seen as','also known as',
     'background','court record','social media','neighbor','property'];
 
-  // Name — scan all lines for a proper name pattern
-  for (var i=0; i<lines.length; i++) {
+  // Name — scan lines for a proper name pattern
+  for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
-    if (/^(home|search|people|background|menu|skip|sign|log|find|true)/i.test(line)) continue;
+    if (!line || line.length < 3 || line.length > 60) continue;
+
+    // Skip lines that clearly are not names
     if (/^\d/.test(line)) continue;
-    if (line.length < 4 || line.length > 60) continue;
-    if (/age\s+\d|phone|address|email|relative|known|seen|last\s+reported/i.test(line)) continue;
-    var words = line.split(/\s+/).filter(function(w){ return /^[A-Z][a-z]+$|^[A-Z]+$/.test(w); });
-    if (words.length >= 2 && words.length <= 4) {
-      result.fullName = line;
-      result.firstName = words[0] || '';
-      result.lastName = words[words.length-1] || '';
-      if (words.length >= 3) result.middleName = words.slice(1,-1).join(' ');
+    if (/,/.test(line)) continue; // addresses and city/state always have commas
+    if (/lives\s+in|lives\s+near|age[\s:]*\d|born|phone|address|email|relative|also\s+seen|also\s+known|last\s+reported|possible|primary|background|court|social|search|lookup|found|result/i.test(line)) continue;
+    if (/^(home|search|people|background|menu|skip|sign|log|find|true|lives|born|in|at|near|the)/i.test(line)) continue;
+
+    var totalWords = line.split(/\s+/);
+
+    // Each word must be EITHER title case (David) OR all-caps min 3 letters (DAVID)
+    // This blocks "in", "IL", "MI" while allowing real names in any capitalisation
+    var nameWords = totalWords.filter(function(w) {
+      return /^[A-Z][a-z]{1,}$/.test(w) || /^[A-Z]{3,}$/.test(w);
+    });
+
+    // ALL words on the line must look like name words — blocks "Lives in CHICAGO IL"
+    if (nameWords.length >= 2 && nameWords.length <= 4 && nameWords.length === totalWords.length) {
+      // Convert to Title Case (handles ALL CAPS names like APPLE KING)
+      var tc = nameWords.map(function(w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      });
+      result.fullName = tc.join(' ');
+      result.firstName = tc[0] || '';
+      result.lastName = tc[tc.length - 1] || '';
+      if (tc.length >= 3) result.middleName = tc.slice(1, -1).join(' ');
       break;
     }
   }
